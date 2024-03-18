@@ -42,7 +42,9 @@ namespace BackupApp
                 if (db_company.Exists())
                 {
                     string compName = db_company.NumeFirma.ToString();
-                    string dbfName = regex.IsMatch(result.NumeFirma) ? result.NumeFirma.ToString() : result.CuiFirma.ToString();
+
+                    string dbfName = regex.IsMatch(Utility.Trim(result.NumeFirma)) ? 
+                        Utility.Trim(result.NumeFirma.ToString()) : Utility.Trim(result.CuiFirma.ToString());
 
                     if (Convert.ToBoolean(string.Compare(compName, dbfName)))
                     {
@@ -64,9 +66,11 @@ namespace BackupApp
                     if (deleted_company.Exists())
                     {
                         string comp_name = deleted_company.NumeFirma.ToString();
-                        string dbf_name = regex.IsMatch(result.NumeFirma) ? result.NumeFirma.ToString() : result.CuiFirma.ToString();
 
-                        if ( Convert.ToBoolean(string.Compare(deleted_company.CodFirma.ToString(), result.CodFirma.ToString())) || 
+                        string dbf_name = regex.IsMatch(result.NumeFirma) ? 
+                            Utility.Trim(result.NumeFirma.ToString()) : Utility.Trim(result.CuiFirma.ToString());
+
+                        if ( Convert.ToBoolean(string.Compare(deleted_company.CodFirma.ToString(), Utility.Trim(result.CodFirma.ToString()))) || 
                             Convert.ToBoolean(string.Compare(comp_name, dbf_name)) )
                         {
                             if (RestoreDeletedCompany(deleted_company))
@@ -88,16 +92,18 @@ namespace BackupApp
                     }
                     else
                     {
-                        db_company.CodFirma = result.CodFirma;
-                        db_company.NumeFirma = regex.IsMatch(result.NumeFirma) ? result.NumeFirma : result.CuiFirma;
-                        db_company.CuiFirma = result.CuiFirma;
-                        db_company.RegComFirma = result.RegComFirma;
+                        db_company.CodFirma = Utility.Trim(result.CodFirma);
+                        db_company.NumeFirma = regex.IsMatch(Utility.Trim(result.NumeFirma)) ? 
+                            Utility.Trim(result.NumeFirma) : Utility.Trim(result.CuiFirma);
+
+                        db_company.CuiFirma = Utility.Trim(result.CuiFirma);
+                        db_company.RegComFirma = Utility.Trim(result.RegComFirma);
                         db_company.Guid = Company.GenerateGuid(16, true);
                         db_company.CreatedAt = Utility.GetTimestamp();
                         db_company.Save();
 
                         Utility.DisplayMessage(
-                            $"=> Inregistrez firma: {(regex.IsMatch(result.NumeFirma) ? result.NumeFirma : result.CuiFirma)}"
+                            $"=> Inregistrez firma: {(regex.IsMatch(Utility.Trim(result.NumeFirma)) ? Utility.Trim(result.NumeFirma) : Utility.Trim(result.CuiFirma))}"
                         );
                     }
                 }
@@ -344,28 +350,37 @@ namespace BackupApp
 
         private static bool UpdateCompany(FirmeDbf result, Company company)
         {
-            string dbfName = regex.IsMatch(result.NumeFirma) ? result.NumeFirma.ToString() : result.CuiFirma.ToString();
+            string dbfName = regex.IsMatch(Utility.Trim(result.NumeFirma)) ? 
+                Utility.Trim(result.NumeFirma.ToString()) : Utility.Trim(result.CuiFirma.ToString());
+
             string compRegCom = !string.IsNullOrEmpty(company.RegComFirma) ? company.RegComFirma.ToString() : null;
-            string dbfRegCom = !string.IsNullOrEmpty(result.RegComFirma) ? result.RegComFirma.ToString() : null;
+
+            string dbfRegCom = !string.IsNullOrEmpty(Utility.Trim(result.RegComFirma)) ? Utility.Trim(result.RegComFirma.ToString()) : null;
 
             string oldCompDir = Path.Combine(bs.ToPath, Path.Combine(App.saves, $"{company.CodFirma} - {company.NumeFirma}"));
-            string newCompDir = Path.Combine(bs.ToPath, Path.Combine(App.saves, $"{result.CodFirma} - {dbfName}"));
+
+            string newCompDir = Path.Combine(bs.ToPath, Path.Combine(App.saves, $"{Utility.Trim(result.CodFirma)} - {dbfName}"));
 
             company.CodFirma = Convert.ToBoolean(string.Compare(company.CodFirma.ToString(), result.CodFirma.ToString())) ?
-                result.CodFirma : company.CodFirma;
+                Utility.Trim(result.CodFirma) : company.CodFirma;
+
             company.NumeFirma = dbfName;
-            company.RegComFirma = Convert.ToBoolean(string.Compare(compRegCom, dbfRegCom)) ? result.RegComFirma : company.RegComFirma;
+
+            company.RegComFirma = Convert.ToBoolean(string.Compare(compRegCom, dbfRegCom)) ? Utility.Trim(result.RegComFirma) : company.RegComFirma;
 
             try
             {
-                if (Directory.Exists(@newCompDir)) Directory.Delete(@newCompDir);
-                if (Directory.Exists(@oldCompDir)) Directory.Move(@oldCompDir, @newCompDir);
+                _  = company.Save();
+
+                Directory.Delete(@newCompDir, true);
+
+                Directory.Move(@oldCompDir, @newCompDir);
 
                 _ = OnCompanyRename.UpdateCompanyRecords(company, newCompDir);
 
-                if (Directory.Exists(@oldCompDir)) Directory.Delete(@oldCompDir, true);
+                Directory.Delete(@oldCompDir, true);
 
-                return company.Save();
+                return true;
             }
             catch (Exception e)
             {
