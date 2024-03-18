@@ -13,7 +13,7 @@ namespace BackupApp
             string sql = $"SELECT * FROM `{CompanyRecords.GetTable()}` WHERE `CompanyGuid` = '{company.Guid}'";
             List<CompanyRecords> records = CompanyRecords.Query(sql);
 
-            Parallel.ForEach(records, record => {
+            foreach(CompanyRecords record in records) {
                 if (File.Exists(Path.Combine(companyPath, record.Filename)))
                 {
                     record.Filepath = Path.Combine(companyPath, record.Filename);
@@ -33,7 +33,7 @@ namespace BackupApp
                         $" din baza de date, pentru firma: {company.NumeFirma}"
                     );
                 }
-            });
+            }
             return true;
         }
     }

@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using ClassLibrary;
-using System.Threading.Tasks;
 
 namespace BackupApp
 {
@@ -50,7 +49,7 @@ namespace BackupApp
                         _ = UpdateCompany(result, db_company);
 
                         Utility.DisplayMessage(
-                            $"=> Actualizez firma: {dbfName}, schimb numele din: {db_company.NumeFirma} in: {dbfName}"
+                            $"=> Actualizez firma: {dbfName}, schimb numele din: {compName} in: {dbfName}"
                         );
                     }
                     else
@@ -355,17 +354,16 @@ namespace BackupApp
             company.CodFirma = Convert.ToBoolean(string.Compare(company.CodFirma.ToString(), result.CodFirma.ToString())) ?
                 result.CodFirma : company.CodFirma;
             company.NumeFirma = dbfName;
+            company.RegComFirma = Convert.ToBoolean(string.Compare(compRegCom, dbfRegCom)) ? result.RegComFirma : company.RegComFirma;
 
             try
             {
                 if (Directory.Exists(@newCompDir)) Directory.Delete(@newCompDir);
                 if (Directory.Exists(@oldCompDir)) Directory.Move(@oldCompDir, @newCompDir);
 
-                OnCompanyRename.UpdateCompanyRecords(company, newCompDir);
+                _ = OnCompanyRename.UpdateCompanyRecords(company, newCompDir);
 
                 if (Directory.Exists(@oldCompDir)) Directory.Delete(@oldCompDir, true);
-
-                company.RegComFirma = Convert.ToBoolean(string.Compare(compRegCom, dbfRegCom)) ? result.RegComFirma : company.RegComFirma;
 
                 return company.Save();
             }
