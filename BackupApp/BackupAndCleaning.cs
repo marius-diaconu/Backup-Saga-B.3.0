@@ -350,6 +350,9 @@ namespace BackupApp
 
         private static bool UpdateCompany(FirmeDbf result, Company company)
         {
+            int countOldDirFiles = 0;
+            int countNewDirFiles = 0;
+
             string dbfName = regex.IsMatch(Utility.Trim(result.NumeFirma)) ? 
                 Utility.Trim(result.NumeFirma.ToString()) : Utility.Trim(result.CuiFirma.ToString());
 
@@ -372,15 +375,24 @@ namespace BackupApp
             {
                 _  = company.Save();
 
-                Directory.Delete(@newCompDir, true);
+                if (Directory.Exists(@newCompDir)) Directory.Delete(@newCompDir, true);
 
-                Directory.Move(@oldCompDir, @newCompDir);
+                if (!Directory.Exists(newCompDir))
+                {
+                    Directory.Move(@oldCompDir, @newCompDir);
 
-                _ = OnCompanyRename.UpdateCompanyRecords(company, newCompDir);
+                    DirectoryInfo oldDir = new DirectoryInfo(@oldCompDir);
+                    FileInfo[] oldDirFiles = oldDir.GetFiles();
+                    countOldDirFiles = oldDirFiles.Length;
 
-                Directory.Delete(@oldCompDir, true);
+                    DirectoryInfo newDir = new DirectoryInfo(@newCompDir);
+                    FileInfo[] newDirFiles = newDir.GetFiles();
+                    countNewDirFiles = newDirFiles.Length;
+                }
 
-                return true;
+                if (Directory.Exists(oldCompDir) && countOldDirFiles == 0 && countNewDirFiles > 0) Directory.Delete(@oldCompDir, true);
+
+                return OnCompanyRename.UpdateCompanyRecords(company, newCompDir);
             }
             catch (Exception e)
             {
